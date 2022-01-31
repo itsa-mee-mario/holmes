@@ -38,6 +38,7 @@ if not os.path.exists("habits"):
 
 habits = dict()
 for habit in os.listdir("habits"):
+    print(habit)
     with open("habits/" + habit, "r") as f:
         lines = f.readlines()
         habitname = lines[0].strip()
@@ -53,6 +54,7 @@ for habit in os.listdir("habits"):
         ]
         for line, weekday in list(zip(lines[1:], weekdays)):
             habits[habitname][weekday] = int(line.strip())
+print(habits)
 
 class counter():
     def __init__(self):
@@ -137,22 +139,16 @@ def remove_item(item):
     update_list()
 
 
-# function that displays the todolist
+# function that displays the todolist, with a button for each item that removes it
 def display_list():
-    # for every item in the todolist, print it out
-    for i in range(len(todolist)):
-        put_collapse(
-            todolist[i][0],
-            [
-                put_markdown("### "+ todolist[i][1]),
-                put_button(
-                    "Remove",
-                    lambda: remove_item(todolist[i][0]),
-                    color="danger",
-                    outline=True,
-                ),
-            ],
-        )
+    # clear the todolist
+    with use_scope("todo", clear=True):
+        # for every item in the todolist, display it with a button to remove it
+        for item in todolist:
+            put_collapse(item[0], put_button("Remove", lambda x=item[0]: remove_item(x)))
+            
+           
+
 
 
 # for every item in the active directory, add it to the todolist as a tuple of (title, description)
@@ -189,6 +185,7 @@ def show_time():
 with use_scope("habits", clear=True):
     habits = dict()
     for habit in os.listdir("habits"):
+        print(habit)
         with open("habits/" + habit, "r") as f:
             lines = f.readlines()
             habitname = lines[0].strip()
@@ -207,13 +204,25 @@ with use_scope("habits", clear=True):
 
                 habits[habitname][weekday] = int(line.strip())
 
-
-
 def display_habits():
-    with use_scope("habits"):
-        
+    with use_scope("habits", clear=True):
+        def progress():
+        # for every habit in the habits directory, sum the values of the days of the week and divide by number of habits*7
+        # convert this to a percentage
+        # display a progress bar with the percentage
+            with use_scope("progress", clear=True):
+                progress = 0
+                for habit in habits:
+                    for day in habits[habit]:
+                        progress += habits[habit][day]
+                        
+                progress = progress / (len(habits) * 7)
+                
+                put_processbar("bar");
+                set_processbar("bar", progress)
+
         while True:
-           
+            
             for habit in habits:
                 # display a row of buttons for each day of the week
                 
@@ -233,6 +242,7 @@ def display_habits():
                     ],
                     inline=True,
                 )
+                
                 # not_checks is a list weekdays without the elements of checks
                 not_checks = [i for i in weekdays if i not in checks]
                 for day in not_checks:
@@ -248,20 +258,9 @@ def display_habits():
                     for day in habits[habit]:
                         f.write(str(habits[habit][day]) + "\n")
 
-def progress():
-    # for every habit in the habits directory, sum the values of the days of the week and divide by number of habits*7
-    # convert this to a percentage
-    # display a progress bar with the percentage
-    with use_scope("progress", clear=True):
-        progress = 0
-        for habit in habits:
-            for day in habits[habit]:
-                progress += habits[habit][day]
-                
-        progress = progress / (len(habits) * 7)
-        
-        put_processbar("bar");
-        set_processbar("bar", progress)
+
+
+
 
 def open_link():
     subprocess.Popen(["xdg-open", random_hn_link()])
@@ -289,7 +288,7 @@ def main():
     put_markdown("## ")
     
     put_button("random reading link", open_link, outline=True)
-
+    
     # with use_scope("comics"):
     #     # xkcd = "https://xkcd.com/"
     #     # # get the latest comic
